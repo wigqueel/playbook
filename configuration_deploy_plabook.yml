@@ -1,0 +1,35 @@
+---
+
+  - name: Create data directory
+    file:  path=../data state=directory
+
+  - name: Create configs directory
+    file:  path=../data/configs state=directory
+
+  - name: Create diff directory
+    file:  path=../compiled/diff state=directory
+
+  - name: Create candidate directory
+      file: path=../compiled/cand state=directory
+delegate_to: localhost
+run_once: yes
+
+  - name: Push New Config and Retreive Candiate Config using NAPALM
+	napalm_install_config:
+		hostname: '{{ inventory_hostname }}'
+		username: '{{ user }}'
+		dev_os: '{{ os }}'
+		password: '{{ password }}'
+		config_file: '../compiled/{{ inventory_hostname }}/running.conf'
+		commit_changes: '{{commit| default('no')}}'
+		candidate_file: '../compiled/cand/{{ inventory_hostname }}.running.conf'
+		diff_file: '../compiled/diff/{{inventory_hostname}}.running.conf'
+
+
+  - name: Copy Candidate to data
+	  copy:
+	    content: '{{lookup('file','../compiled//cand/{{ inventory_hostname }}.running.conf')}}'
+	    dest: '../data/configs/{{ inventory_hostname }}.running.conf'
+
+  - name: Remove Candidate Folder
+  	file: path=../compiled/cand  state=absent
